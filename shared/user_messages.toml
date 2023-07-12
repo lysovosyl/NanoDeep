@@ -1,0 +1,125 @@
+type = "fragment"
+
+[calibration_failed]
+msg = "Calibration failed"
+args = []
+
+[protocol_selector.parse_error]
+msg = "[{filename}]: Cannot be parsed correctly - {exc}. Check the file."
+args = ["filename", "exc"]
+
+[protocol_selector.failed_launch]
+msg = "[{filename}]: Error launching configuration ({exc})"
+args = ["filename", "exc"]
+
+[protocol_selector.script.not_found]
+msg = "[{filename}]: Script {script} not found. Check the script and script location."
+args = ["filename", "script"]
+
+[protocol_selector.script.invalid_syntax]
+msg = "[{filename}]: Script {script} has invalid syntax. Check the script."
+args = ["filename", "script"]
+
+[protocol_selector.section.error]
+msg = "Error running script under section {name}"
+args = ["name"]
+
+[protocol_selector.stage.start]
+msg = "Starting stage {stage_name}"
+args = ["stage_name"]
+
+[protocol_selector.stage.failed]
+msg = "Stage {stage_name} failed. Aborting."
+args = ["stage_name"]
+
+[base_device.wait_for_temperature]
+msg = "Waiting up to {timeout} seconds for temperature to stabilise at {target}°C"
+args = ["target", "timeout"]
+
+
+[base_device.set_temperature]
+msg = "Setting temperature to reach {target}°C"
+args = ["target"]
+
+[base_device.warn_to_reach_temperature]
+msg = "{timeout} seconds have elapsed. Experiment commencing."
+args = ["timeout"]
+
+[base_device.fail_to_reach_temperature]
+msg = "Failed to reach {target}°C within {timeout} seconds (with {tolerance} tolerance). The experiment will continue anyway."
+args = ["target","timeout","tolerance"]
+
+[base_device.exit_on_timeout_temperature]
+msg = "Failed to reach {target}°C within {timeout} seconds (with {tolerance}°C tolerance). Experiment is stopping. Please contact Support."
+args = ["target", "timeout", "tolerance"]
+
+[config_apply.atts_non_existent]
+msg = "Configuration is trying to set saturation attributes {keys} but they do not exist"
+args = ["keys"]
+
+[config_apply.func_non_existent]
+msg = "Configuration is trying to set {key} to {value}, but that functionality does not exist"
+args = ["key","value"]
+
+[sequencing.start]
+msg = "Starting sequencing procedure"
+args = []
+
+[sequencing.mux_scan]
+msg = "Performing Pore Scan"
+args = []
+
+[sequencing.channel_scan]
+msg = "Performing Channel Scan"
+args = []
+
+[sequencing.finish]
+msg = "The sequencing run has finished, but basecalling may continue"
+args = []
+
+[mux_scan_result]
+msg = "Pore scan for flow cell {flow_cell_id} has found a total of {total_pores} pores. {num_pores} pores available for immediate sequencing"
+args = ["flow_cell_id", "total_pores", "num_pores"]
+
+[channel_scan_result]
+msg = "Channel scan for flow cell {flow_cell_id} has found a total of {total_pores} pores. {num_pores} pores available for immediate sequencing"
+args = ["flow_cell_id", "total_pores", "num_pores"]
+
+
+[modular_qc.collect_continuous]
+msg = "Collecting continuous data"
+args = []
+
+[modular_qc.collect_waveform]
+msg = "Collecting waveform data"
+args = []
+
+[modular_qc.collect_unblock]
+msg = "Collecting active unblock data"
+args = []
+
+[modular_qc.collect_read_classifications]
+msg = "Collecting read classification data"
+args = []
+
+[platform_qc.report]
+msg = "Flow Cell {flow_cell_id} has {num_pores} pores available for sequencing"
+args = ["flow_cell_id", "num_pores"]
+
+
+[ctc_script.start]
+msg = "Starting hardware check"
+args = []
+
+[ctc_script.failed]
+msg = "Hardware check failed. Please unplug and re-plug the CTC or Flongle adapter and try again."
+args = []
+
+
+[ctc_script.success]
+msg = "Hardware check has completed successfully"
+args = []
+
+[ctc_script.failed_more_info]
+msg = "Hardware check failed. ({total_failed}/{channel_count} failed)"
+args = ["total_failed", "channel_count"]

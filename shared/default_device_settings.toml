@@ -1,0 +1,76 @@
+type = "fragment"
+
+[device]
+sample_rate = 5000 # Rate to sample(Hz). Nearest valid value will be used! But cannot be < 1000 or > 33000
+bias_voltage_offset = 0 # How much to offset the bias voltage
+
+#### MINION_LIKE (minion/flongle/gridion)
+
+[device.minion_like]
+integration_capacitor = 250.0 # Integration capacitor value(fF). Must be: 62.5, 250.0, 1000.0 or 1187.5
+gain = 1 # Track/Hold gain. Must be: 1 or 5
+non_overlap_clock = 2 # Amount of non-overlap for non-overlapping clocks(int). Must be: 1 or 2
+low_pass_filter_frequency = 40 # Low pass filter frequency to be applied(KHz). Must be: 5, 10, 20, 40, 80 or 'disabled'                         # Setting it to 'disabled' in inherited will be a problem. Hmm.
+sinc_decimation = 64 # If the integration time is < 50us or sample rate > 20KHz, this will be forced to 32 (int). Must be 32 or 64
+int_reset_time = 1.0 # Integrator reset time (us). Must be in 1.0 to 16.0 inclusive with steps of 0.5
+th_sample_time = 0.5 # Track/hold sample time (us). Must be in 0.5 to 7.5 inclusive with steps of 0.5
+sinc_delay = 4 # Delay from 2:1 mux switch to sinc filter enable in ADC clocks (int). Must be in range 0 to 15 inclusive
+samples_to_reset = 1 # The the number of integrator resets per sample(int). Must be in 0 to 255 inclusive
+bias_current = 0 # Bias current(Measured in what?int?). Must be: 0, 5, 10 or 15.
+compensation_capacitor = 0 # Compensation capacitor value (int). Must be in 0 to 49 inclusive in intervals of 7
+overcurrent_limit = true # Whether to enable detection of excessive current (Depends on gain).
+test_current = 0 # The level of current used in the TEST_CURRENT channel configuration(pA). Must be in 0 to 350 inclsuive in intervals of 50
+unblock_voltage = 0 # Used during unblock() calls
+
+# See base_device saturation functions for why thresholds are just `roughly`
+[device.minion_like.saturation.adc]
+# ADC Saturation
+min = -4000 # Trigger saturation if adc value goes out of bounds
+max = 4000
+threshold = 640 # How many samples (roughly) that need to be outside the min/max to trigger saturation. Multiples of 64. 0 = disable
+saturation_during_unblock = false # Whether to trigger saturation during unblock
+
+[device.minion_like.saturation.pa]
+# pA Saturation
+# min = 0.0 # Trigger saturation if pa value goes out of bounds
+# max = 0.0
+threshold = 0 # How many samples (roughly) that need to be outside the min/max to trigger saturation. Multiples of 64. 0 = disable
+saturation_during_unblock = false # Whether to trigger saturation during unblock
+
+
+### PROMETHION SPECIFIC
+
+[device.promethion]
+integration_capacitor = 500.0 # Integration capacitor value(fF). Must be 100, 200, 500 or 600
+gain = 2 # Signal gain multiplier, applied to the integrator circuit(int). Must be: 2 or 4
+ramp_voltage = 0.0 # Ramp voltage (mV)(double). Must be in range -1250 to 1250 inclusive
+bias_voltage = 0.0 # Bias voltage (mV)(double). Must be in range -1250 to 1250 inclusive
+regeneration_current_voltage_clamp = 0 # The voltage in the regeneration circuit is clamped under this value(mV?). Must be in range -1000 to 1000 inclusive
+regeneration_current_test_enabled = false # If regeneration test current is enabled
+regeneration_current = 0 # Current to use if regenerating muxes. Used during unblock() calls
+current_inverted = true # Inverts the currents polarity
+overload_mode = "latch_off" # What to do when current goes above the ADC range.  Must be one of set_flag/latch_off/clear/limit
+bias_current = "nominal" # The bias current for the amplifier - this controls the level of noise of the signal. Must be: off/low/nominal/high
+low_pass_filter_frequency = 20 # Signal filter for input adc signal(kHz). Must be: 10, 20, 30, 40, 50, 60, 70 or 80
+membrane_simulation_enabled = false # Controls the state of the membrane simulation
+unblock_voltage = 0 # Used during unblock() calls
+bias_voltage_offset = 10 # How much to offset the bias voltage
+
+# See base_device saturation functions for why thresholds are just `roughly`
+[device.promethion.saturation.adc]
+# Promethion has 11 bits for the digitisation, as opposed to minion's 13
+# So we only have 2048 values to play with. Promethion can't detect negative values
+# But the FPGA detects this and puts a negative number in to indicate it has found saturation
+
+# ADC Saturation
+min = -5 # Trigger saturation if adc value goes out of bounds
+max = 1900
+threshold = 640 # How many samples (roughly) that need to be outside the min/max to trigger saturation. Multiples of 64. 0 = disable
+saturation_during_unblock = false # Whether to trigger saturation during unblock
+
+[device.promethion.saturation.pa]
+# pA Saturation
+# min = 0.0 # Trigger saturation if pa value goes out of bounds
+# max = 0.0
+threshold = 0 # How many samples (roughly) that need to be outside the min/max to trigger saturation. Multiples of 64. 0 = disable
+saturation_during_unblock = false # Whether to trigger saturation during unblock

@@ -1,0 +1,82 @@
+type = "fragment"
+
+# Anything with channels accepts single and groups
+# raw = [1, 2, 3, 4] would be channels 1-4 on raw
+# raw = [[1, 10], 15] would be channels 1-10 and 15 on
+
+# For any substitution patterns, if not present they will be resolved as an empty string
+# For example file_pattern = a/{barcode_arrangement}/c.fast5
+# Will generate a/c.fast5 if barcoding isn't present
+
+[writer_configuration.read_fast5] # Multi fast5
+compression_level = 1 # 0 =  no compression; 1->9 = Getting more compressed but using more CPU time
+compression_type = "VbzCompression"  # Either ZlibCompression or VbzCompression
+
+disable_writing_passed_reads = false
+disable_writing_failed_reads = false
+disable_writing_force_skipped_reads = false
+
+file_pattern = "fast5{basecall_status}/{barcode_arrangement}/{flow_cell_id}{basecall_status}_{barcode_arrangement}_{short_protocol_run_id}_{short_run_id}_{batch_number}.fast5"
+fastq_header_pattern = "{read_id} runid={run_id} read={read_number} ch={channel_name} start_time={read_start_time} flow_cell_id={flow_cell_id} protocol_group_id={protocol_group_id} sample_id={sample_id} barcode={barcode_arrangement} barcode_alias={alias} parent_read_id={parent_read_id} basecall_model_version_id={basecall_model_version_id}"
+
+batch_count = 4000 # How many reads in each file
+
+raw = [] # Channels to output raw. Stored under /Raw/Reads_*/Signal
+fastq = [] # Channels to output fastq. Stored under /Analyses/Basecall_1D_*/BaseCalled_(template|complement)/Fastq
+trace_table = [] # Stored under /Analyses/Basecall_1D_*/BaseCalled_template/Trace
+move_table = [] # Stored under /Analyses/Basecall_1D_*/BaseCalled_template/Move
+modifications_table = [] # Stored under /Analyses/Basecall_1D_*/BaseCalled_template/ModBaseProbs
+
+[writer_configuration.read_pod5] # pod5
+disable_writing_passed_reads = false
+disable_writing_failed_reads = false
+disable_writing_force_skipped_reads = false
+
+file_pattern = "pod5{basecall_status}/{barcode_arrangement}/{flow_cell_id}{basecall_status}_{barcode_arrangement}_{short_protocol_run_id}_{short_run_id}_{batch_number}.pod5"
+
+batch_count = 4000 # How many reads in each file
+
+enable = []
+
+[writer_configuration.read_fastq]
+enable = []  # Channels to enable fastq on
+
+file_pattern = "fastq{basecall_status}/{barcode_arrangement}/{flow_cell_id}{basecall_status}_{barcode_arrangement}_{short_protocol_run_id}_{short_run_id}_{batch_number}.fastq"
+header_pattern = "{read_id} runid={run_id} read={read_number} ch={channel_name} start_time={read_start_time} flow_cell_id={flow_cell_id} protocol_group_id={protocol_group_id} sample_id={sample_id} barcode={barcode_arrangement} barcode_alias={alias} parent_read_id={parent_read_id} basecall_model_version_id={basecall_model_version_id}"
+
+batch_count = 4000 # How many files in each batch
+
+compression = false
+
+[writer_configuration.read_bam]
+enable = []  # Channels to enable bam on
+file_pattern = "bam{basecall_status}/{barcode_arrangement}/{flow_cell_id}{basecall_status}_{barcode_arrangement}_{short_protocol_run_id}_{short_run_id}_{batch_number}.bam"
+batch_count = 4000  # How many files are in each batch
+
+[writer_configuration.read_protobuf]
+enable = [] # Channels to enable protobuf files on
+
+file_pattern = "pbread{basecall_status}/{batch_number}/{flow_cell_id}_{short_protocol_run_id}_{short_run_id}_ch_{channel_name}_read_{read_number}.pbread"
+
+batch_count = 4000 # How many files in each batch
+
+[writer_configuration.sequencing_summary]
+enable = [] # Channels to enable sequencing summary on
+
+file_pattern = "sequencing_summary_{flow_cell_id}_{short_protocol_run_id}_{short_run_id}.txt"
+
+[writer_configuration.bulk]
+compression_level = 1 # 0 =  no compression; 1->9 = Getting more compressed but using more CPU time
+compression_type = "VbzCompression" # Either ZlibCompression or VbzCompression
+
+file_pattern = "{machine_id}_{daq_start_time}_{flow_cell_id}_{device_id}_{protocol_purpose}_{sample_id}_{short_protocol_run_id}_{short_run_id}.fast5"
+
+# The following are all a list of channels
+raw = [] # Stored under /Raw/Channel_*/Signal
+events = [] # Stored under /IntermediateData/Channel_*/Events
+reads = [] # Stored under /IntermediateData/Channel_*/Reads
+multiplex = [] # Stored under /MultiplexData/Channel_*/Multiplex
+channel_states = [] # Stored under /StateData/Channel_*/States
+
+device_metadata = false # E.g. applied voltage. Stored in a per frame sequence in /Device/MetaData
+device_commands = false # Stored with the frame commands take effect sequence in /Device/AsicCommands

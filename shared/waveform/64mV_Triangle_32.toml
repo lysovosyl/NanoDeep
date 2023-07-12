@@ -1,0 +1,6 @@
+type = "fragment"
+
+[custom_settings.promethion.waveform]
+frequency = 13.157894737
+waveform_values = [52, 48, 44, 40, 36, 32, 28, 24, 20, 16, 12, 8, 4, 0, -4, -8,
+                   -12, -8, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48]
