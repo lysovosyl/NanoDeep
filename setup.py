@@ -1,7 +1,7 @@
 from setuptools import setup
 import setuptools
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+# with open("README.md", "r") as fh:
+#     long_description = fh.read()
 
 setup(
     name='nanodeep',
@@ -12,7 +12,7 @@ setup(
     author='Yusen Lin',
     author_email='1014903773@qq.com',
     description='A package used to achieve adaptive sample',
-    long_description=long_description,
+    long_description=' ',
     long_description_content_type="text/markdown",
     install_requires=[
         'numpy >= 1.20.0',

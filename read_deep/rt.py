@@ -11,7 +11,7 @@ from torch.utils.data import dataloader
 from sklearn.metrics import roc_curve, auc
 from tqdm import tqdm
 import csv
-
+from read_deep.preprocess import signal_preprocess
 class loaddata_from_disk(dataset.Dataset):
     def __init__(self, data_path, label_path, input_length):
         super(loaddata_from_disk, self).__init__()
@@ -78,7 +78,7 @@ class loaddata_from_disk(dataset.Dataset):
         label = np.zeros(len(self.lable_name))
         label[self.lable_name.index(self.lable[id])] = 1
         signal = self.reader_id_index[id].get_read(id).get_raw_data()
-        signal = (signal - np.average(signal)) / np.var(signal)
+        signal = signal_preprocess(signal)
         if len(signal) > self.input_length:
             signal = signal[0:self.input_length]
         signal = np.pad(signal, ((0, self.input_length - len(signal))), 'constant', constant_values=0)
@@ -130,19 +130,22 @@ class loaddata_from_memory(dataset.Dataset):
 
             for i, id in enumerate(id_list):
                 signal = reader.get_read(id).get_raw_data()
-                signal = (signal - np.average(signal))/np.var(signal)
+                signal = signal_preprocess(signal)
+                if len(signal) > self.input_length:
+                    signal = signal[1000:self.input_length + 1000]
+                signal = np.pad(signal, ((0, self.input_length - len(signal))), 'constant', constant_values=0)
+                signal = signal[np.newaxis,]
+                signal = signal.astype(np.float32)
+
                 self.reader_raw_data[id] = signal
+
             pbar.update()
     def __getitem__(self, index):
         id = self.reads_ids[index]
         label = np.zeros(len(self.lable_name))
         label[self.lable_name.index(self.lable[id])] = 1
         signal = self.reader_raw_data[id]
-        if len(signal) > self.input_length:
-            signal = signal[1000:self.input_length+1000]
-        signal = np.pad(signal, ((0, self.input_length - len(signal))), 'constant', constant_values=0)
-        signal = signal[np.newaxis,]
-        signal = signal.astype(np.float32)
+
         return signal, label
 
     def data_status(self):
@@ -392,12 +395,12 @@ class rt_deep:
 
         with open(train_metrics_result_save_path, 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['train_loss'])
+            writer.writerow(['train_acc'])
             writer.writerow(train_history_metrics)
 
         with open(val_metrics_result_save_path, 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['validation_loss'])
+            writer.writerow(['validation_acc'])
             writer.writerow(validation_history_metrics)
 
     def test_model(self,batch_size=50, **kwargs):

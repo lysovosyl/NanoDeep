@@ -32,9 +32,12 @@ import torch
 
 
 def check_mem(cuda_device):
-    devices_info = os.popen('"/usr/bin/nvidia-smi" --query-gpu=memory.total,memory.used --format=csv,nounits,noheader').read().strip().split("\n")
+    devices_info = os.popen(
+        '"/usr/bin/nvidia-smi" --query-gpu=memory.total,memory.used --format=csv,nounits,noheader').read().strip().split(
+        "\n")
     total, used = devices_info[int(cuda_device[-1])].split(',')
-    return total,used
+    return total, used
+
 
 def occumpy_mem(cuda_device):
     total, used = check_mem(cuda_device)
@@ -42,7 +45,7 @@ def occumpy_mem(cuda_device):
     used = int(used)
     max_mem = int(total * 0.4)
     block_mem = max_mem - used
-    x = torch.cuda.FloatTensor(256,1024,block_mem)
+    x = torch.cuda.FloatTensor(256, 1024, block_mem)
     del x
 
 
@@ -86,12 +89,12 @@ class ReadUntil(threading.Thread):
     """
 
     def __init__(
-        self,
-        config: dict[str, Any],
-        device: BaseDeviceInterface,
-        read_until_client: ReadUntilClient,
-        nanodeepclient: rt_deep,
-        barcode_counts: Optional[dict[str, int]] = None,
+            self,
+            config: dict[str, Any],
+            device: BaseDeviceInterface,
+            read_until_client: ReadUntilClient,
+            nanodeepclient: rt_deep,
+            barcode_counts: Optional[dict[str, int]] = None,
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -99,7 +102,7 @@ class ReadUntil(threading.Thread):
         self.read_until_client = read_until_client
         self.nanodeepclient = nanodeepclient
         self.flick_time = (
-            time.monotonic() + time.monotonic()
+                time.monotonic() + time.monotonic()
         )
 
         self.config = config
@@ -114,8 +117,6 @@ class ReadUntil(threading.Thread):
             self.exists = os.path.exists(self.report_read_path)
 
         super().__init__()
-
-
 
     def _enrich(self, result) -> str:
         """Figures out what to do with a read if trying to enrich from the ref/bed file.
@@ -154,11 +155,10 @@ class ReadUntil(threading.Thread):
         To trigger a stop, call self.stop()
 
         """
-        info_time = time.monotonic() + 60
+        accept_num = 0
+        reject_num = 0
         read_basecalled_count = 0
         read_chunk_count = 0
-        lasttime = 0
-        nowtime = 0
         while self.keep_going:
 
             batch_time = time.time()  # Used to track acquisition timings in CSV - Needs absolute time
@@ -175,7 +175,7 @@ class ReadUntil(threading.Thread):
 
             called_batch = []
             raw_data_batch = []
-            for channel,read in read_chunks:
+            for channel, read in read_chunks:
                 reads = {}
                 reads['channel'] = channel
                 reads['number'] = read.number
@@ -192,26 +192,14 @@ class ReadUntil(threading.Thread):
             for index in range(len(result)):
                 called_batch[index]['result'] = result[index]
 
-            # Tell progress
-            if info_time <= start_time:
-                self.logger.info(
-                    f"Basecalled {read_basecalled_count} reads and received {read_chunk_count} reads in the last minute"
-                )
-                read_basecalled_count = 0
-                read_chunk_count = 0
-                info_time = start_time + 60
-
             read_until_data = []
-
             unblock_reads = []
             stop_receiving_reads = []
-
 
             for reads in called_batch:
                 result = reads['result']
                 channel = reads['channel']
                 read_number = reads['number']
-
 
                 read_basecalled_count += 1
                 if channel > 256:
@@ -224,10 +212,12 @@ class ReadUntil(threading.Thread):
                 else:
                     assert False  # nosec Type checking helper
 
-                if decision.startswith("stop_receiving"):
-                    stop_receiving_reads.append((channel, read_number))
-                elif decision.startswith("unblock"):
+                if decision.startswith("unblock"):
                     unblock_reads.append((channel, read_number))
+                    reject_num += 1
+                else:
+                    accept_num += 1
+
                 if self.report_read_path:
                     read_until_data.append(
                         [
@@ -238,47 +228,16 @@ class ReadUntil(threading.Thread):
                             reads["read_id"],
                             0,
                             decision,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
                         ]
                     )
 
-
-            # Ignore the rest of the bad_chunk reads
-            for (channel, read) in bad_chunks:
-                stop_receiving_reads.append((channel, read.number))
-                # Put the bad reads into data so that there is a record of them
-                if self.report_read_path:
-                    read_until_data.append(
-                        [
-                            0,
-                            read.number,
-                            channel,
-                            0,
-                            0,
-                            0,  # not basecalled, no sequence length
-                            "stop_receiving_bad_previous_flick",
-                            "N/A",  # not basecalled, no barcode
-                            0,  # not basecalled, no qscore
-                            0,  # Not basecalled, no timings for basecalling
-                            0,  # ..
-                            0,  # ..
-                            0,  # ..
-                        ]
-                    )
-
+            print('\r', 'accpet num:', accept_num, 'reject num:', reject_num, end=' ')
             time_to_make_decisions = time.monotonic()
 
             if unblock_reads:
                 self.read_until_client.unblock_read_batch(unblock_reads, duration=self.config["unblock_duration"])
             if stop_receiving_reads:
                 self.read_until_client.stop_receiving_batch(stop_receiving_reads)
-            lasttime = nowtime
-            nowtime = time.time()
             time_to_send_decisions = time.monotonic()
 
             if read_until_data:
@@ -290,25 +249,13 @@ class ReadUntil(threading.Thread):
                     "read_id",
                     "sequence_length",
                     "decision",
-                    "barcode_arrangement",
-                    "mean_qscore",
-                    "time_to_get_chunks",
-                    "time_to_package_and_send_reads",
-                    "time_to_basecall_reads",
-                    "time_to_make_decisions",
                 ]
 
                 df = pd.DataFrame(read_until_data, columns=columns)
-                df["time_to_send_decisions"] = round(time_to_send_decisions - time_to_make_decisions, 3)
-
-                if self.mode != "barcode_balance":
-                    # mean_qscore is present in non barcoding, but not needed for debug
-                    df.drop(["mean_qscore", "barcode_arrangement"], axis=1, inplace=True)
-
+                df["time_to_send_decisions"] = round(
+                    (time_to_send_decisions - time_to_make_decisions) / len(read_until_data), 3)
                 df.to_csv(self.report_read_path, mode="a", header=not self.exists, index=False)
                 self.exists = True
-
-
 
     def stop(self) -> None:
         """Signals to the thread (run method) to stop.
@@ -352,7 +299,6 @@ class ReadUntilManager:
         )
         self.nanodeep_client.load_the_model_weights(self.weight_path)
 
-
     def _get_barcoding_connection_options(self) -> dict[str, Any]:
         # Gets the barcoding parameters to pass to guppy
         # Retrieves the options from MinKNOW
@@ -394,7 +340,6 @@ class ReadUntilManager:
 
             self._stop_read_until()
 
-
     def _stop_read_until(self) -> None:
         # To be safe also wrap the one this calls in a lock (Rlock so can reenter for free)
         with self._lock:
@@ -417,7 +362,6 @@ class ReadUntilManager:
     def _start_read_until(self) -> None:
         with self._lock:
             if self.read_until_process is None:
-
                 # Make sure any reads waiting in basecaller are drained as we don't need them
                 self.logger.info("Draining any straggling basecaller reads")
 
@@ -548,9 +492,9 @@ def parse_args(args: list) -> argparse.Namespace:
 
     parser.add_argument("--filter_type", default="enrich", choices=["enrich", "deplete"])
     parser.add_argument("--filter_which", required=True)
-    parser.add_argument("--weight_path",required=True,type=str)
+    parser.add_argument("--weight_path", required=True, type=str)
     parser.add_argument('--model_config', default=None)
-    parser.add_argument('--model_name', default='nanodeep',help='It should be nanodeep')
+    parser.add_argument('--model_name', default='nanodeep', help='It should be nanodeep')
     parser.add_argument("--batch_size", default=512, help="How many new reads to grab from read until client", type=int)
     parser.add_argument("--report_read", default=True, type=boolify, help="Whether to output read decisions")
     parser.add_argument("--run_in_mux_scan", default=False, type=boolify, help="Whether to run read until in mux scans")
@@ -567,7 +511,7 @@ def parse_args(args: list) -> argparse.Namespace:
         nargs="*",
         default=["strand", "adapter"],
         help="RU will only stream reads that start with one of these classifications. "
-        + "All others will be _accepted_ + not streamed",
+             + "All others will be _accepted_ + not streamed",
     )
     parser.add_argument(
         "--first_channel",

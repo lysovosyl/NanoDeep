@@ -20,6 +20,7 @@ def main():
     else:
         f = open(save_file, 'w')
         for file in os.listdir(input_path):
+            print('deal with {}'.format(os.path.join(input_path, file)))
             a = ml.MultiFast5File(os.path.join(input_path, file))
             ids = a.get_read_ids()
             for id in ids:

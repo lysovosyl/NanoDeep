@@ -79,7 +79,6 @@ class SE(nn.Module):
         return out
 
 
-
 class model(nn.Module):
     def __init__(self,**kwargs):
         super(model, self).__init__()
