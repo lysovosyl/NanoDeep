@@ -72,6 +72,7 @@ Below is an example table for image_info.csv.
 | 1     |  32400    | 1120 | 1     |  900   |  900 |
 | 2     |  36000    | 477  | 1     |  900   |  900 |
 | 3     |  14400    | 4456 | 1     |  900   |  900 |
+
 This table includes 6 columns. 
   - `index`: The image file name, corresponding to x.png.
   - `x`: The x-coordinate location to crop the image x.png in the WSI.
