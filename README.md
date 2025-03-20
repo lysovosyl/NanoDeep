@@ -51,13 +51,13 @@ The epidermis layer will be saved in ./save_dir.
             ├──3.png
             ├──...
             └──image_info.csv
-        ├──slide_1
+        ├──slide_2
             ├──1.png
             ├──2.png
             ├──3.png
             ├──...
             └──image_info.csv
-        ├──slide_2
+        ├──slide_3
             ├──1.png
             ├──2.png
             ├──3.png
