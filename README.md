@@ -1,106 +1,199 @@
 
-
-![image](title/title.png)
-
-
-
 ## Table of Contents
 
 - [Background](#background)
-- [Install](#install)
-- [Usage](#usage)
-- [Example](#example-readmes)
+- [Installation](#installation)
+- [Tutorial](#tutorial)
 - [Maintainers](#maintainers)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Background
-
-
-This is an open-source Python3 package for nanopore adaptive sample base on deep learning and the Read Until API.
-
-The Read Until API are used to connect to MinKNOW server so that we can obtain reads data are sequenced by Nanopore sequencing.Reads data will be return to client and be classified using NanoDeep which is a deep learning model based on PyTorch.If the signal does not meet the desired criteria, it will be unblocked.
-
-Although this package can run on both Windows and Linux if you can create the dataset yourself, we highly recommend using Linux for running this package.
-
-The code here has been tested using MinION and NVIDIA RTX3080 on live sequencing runs and NVIDIA P620 using playback on a simulated run.You are strongly advised to test your setup prior to running (see below for example tests) as this code does affect sequencing output. Please note that running this code is at your own risk.
+The whole-slide images (WSI) examination of skin biopsy is the golden standard for pathological diagnosis of most skin diseases. While most studies focus on the classification tasks, an interpretable computational framework is lacking for WSI analysis. To this end, we developed PathoEye for WSI analysis in dermatology, which integrates epidermis-guided sampling, deep learning and radiomics. The established classification model using PathoEye performed better than the existing state-of-the-art methods in discriminating the young and aged skin. Moreover, PathoEye performs comparably with the existing methods in the binary classification of healthy and diseased skin while performing better in multi-classification tasks. 
 
 ## Install
+Make sure you have installed all the package that were list in requirements.txt
+```
+conda create -n PathoEye python==3.8
+pip install -r requirements.txt
+conda activate PathoEye
+```
 
-This project uses MinKNOW>=22.10.10. Make sure you have installed them locally.It maybe will not work on earlier versions or least versions.
+## Step by step tutorial
+
+### Testing dataset
+This data can be downloaded from https://gtexportal.org/home/histologyPage
+
+
+
+
+### Epidermis extraction
+The following example assumes that the whole slide images (WSIs) data is organized in well known standard formats (such as .svs, .ndpi, .tiff etc.) and stored in a folder named DATA_DIRECTORY.
+```
+    DATA_DIRECTORY/
+        ├──slide_1.svs
+        ├──slide_1.svs
+        ├──slide_2.svs
+        ├──slide_3.svs
+        └── ...
+        
+```
+You can run epidermis_extract.py to extract epidermis of each WSI in the DATA_DIRECTORY as following. 
+```sh
+python epidermis_extract.py -data_dir /DATA_DIRECTORY -save_path ./save_dir
+```
+The epidermis layer will be saved in ./save_dir. 
+```
+    save_dir/
+        ├──slide_1
+            ├──1.png
+            ├──2.png
+            ├──3.png
+            ├──...
+            └──image_info.csv
+        ├──slide_1
+            ├──1.png
+            ├──2.png
+            ├──3.png
+            ├──...
+            └──image_info.csv
+        ├──slide_2
+            ├──1.png
+            ├──2.png
+            ├──3.png
+            ├──...
+            └──image_info.csv
+        └── ...
+```
+Below is an example table for image_info.csv. 
+
+| index | x |    y | screenshot_level | image_width| image_height|
+|:------|     :---:      |-----:|           ---: |           ---: |           ---: |
+| 1     |  32400    | 1120 | 1     |  900   |  900 |
+| 2     |  36000    | 477  | 1     |  900   |  900 |
+| 3     |  14400    | 4456 | 1     |  900   |  900 |
+This table includes 6 columns. 
+  - `index`: The image file name, corresponding to x.png.
+  - `x`: The x-coordinate location to crop the image x.png in the WSI.
+  - `y`: The y-coordinate location to crop the image x.png in the WSI.
+  - `screenshot_level`: The zoom level of the image.
+  - `image_width`: The width of the image.
+  - `image_height`: The height of the image.
+
+### Epidermis thickness and variance of rete ridge length calculation
+You can apply thickness.py to calculate the thickness and the variance of rete ridge of each image in the DATA_DIRECTORY. The output will be saved in the save_dir directory.
+
+
 
 ```sh
-pip install nanodeep
+python thickness.py -data_dir /DATA_DIRECTORY -save_path ./save_dir
 ```
 
-
-## Quickly start
-
+### Epidermis-guided patch sampling
+As described in the last step, the input images should be organized in the right file format and directory. Then, you can applied create_patches.py to segment images of the whole-slide images (WSIs).  
+The organized WSIs must be stored under a folder named TRAIN_DIRECTORY(train dataset) or VAL_DIRECTORY (validation dataset). 
 ```
-nanodeep_testmodel  -data_path ./example/data/ -label_path ./example/label/ -save_path ./example/save -model_path ./example/save/model.pth -model_name nanodeep --load_to_mem -batch_size 50
+    TRAIN_DIRECTORY/
+        ├── class_1
+            ├──slide_1.svs
+            ├──slide_2.svs
+            ├──slide_3.svs
+            └── ...
+        ├── class_2
+            ├──slide_1.svs
+            ├──slide_2.svs
+            ├──slide_3.svs
+            └── ...
+        ├── class_3
+            ├──slide_1.svs
+            ├──slide_2.svs
+            ├──slide_3.svs
+            └── ...
+        └── ...
+
+    VAL_DIRECTORY/
+        ├── class_1
+            ├──slide_1.svs
+            ├──slide_2.svs
+            ├──slide_3.svs
+            └── ...
+        ├── class_2
+            ├──slide_1.svs
+            ├──slide_2.svs
+            ├──slide_3.svs
+            └── ...
+        ├── class_3
+            ├──slide_1.svs
+            ├──slide_2.svs
+            ├──slide_3.svs
+            └── ...
+        └── ...
 ```
-
-```
-nanodeep_trainmodel -data_path ./example/data/ -label_path ./example/label/ -signal_length 3000 -epochs 300 -batch_size 200 --save_best --load_to_mem -save_path ./example/save/
-```
-
-
-
-# Step by step
-
-### Generate simulation data
-Reference software：[DeepSimulator](https://github.com/liyu95/DeepSimulator)
-
-## Make dataset
-When you had generate simiulate signal of one species or genome,use draw_fast5_id to save read id as dataset label
 ```sh
-draw_fast5_id -i path_to_your_simiulator_fast5_data -o path_to_save_id_label
+python create_patches.py -input_path /TRAIN_DIRECTORY -save_path /TRAIN_DATASET -device cuda:0
+python create_patches.py -input_path /VAL_DIRECTORY -save_path /VAL_DATASET -device cuda:0
+```
+The above commands produce the following result for each slide:
+```
+    DATASET/
+        ├── class_1
+            ├──slide_1
+                ├──data
+                    ├──1.png
+                    ├──2.png
+                    └──...
+                ├──mask_target.png
+                └──raw_img.png
+            ├──slide_2
+                ├──data
+                    ├──1.png
+                    ├──2.png
+                    └──...
+                ├──mask_target.png
+                └──raw_img.png
+            └── ...
+        ├── class_2
+            ├──slide_1
+                ├──data
+                    ├──1.png
+                    ├──2.png
+                    └──...
+                ├──mask_target.png
+                └──raw_img.png
+            ├──slide_2
+                ├──data
+                    ├──1.png
+                    ├──2.png
+                    └──...
+                ├──mask_target.png
+                └──raw_img.png
+            └── ...
+        └── ...
 ```
 
-### Train model
-Please must remember the label order of your model.It is useful for Adaptive sample
+### DCNN training and classification
+Next, you can train your own model using the segmented images (the result of the last step) as input. The VAL_DATASET folder will be generated by create_patches.py.
 ```sh
-nanodeep_trainmodel -data_path path_to_your_data/ -lable_path path_to_your_label/ -save_path ./save -model_name Nanodeep -device cuda:0 --save_best --load_to_mem -signal_length 4000 -epochs 100 -batch_size 50
+python train.py -train_path /TRAIN_DATASET -val_path /VAL_DATASET -save_path ./MODEL_SAVEPATH
 ```
 
-### Test model
+### Classification testing
+Subsequently, you can apply the trained model to perform binary classification on a new dataset organized in the right format and directory.
 ```sh
-nanodeep_testmodel -data_path path_to_your_data/ -lable_path path_to_your_label/ -save_path ./save --weight_path ../path_to_your_label/your_model_name.pth -model_name Nanodeep -device cuda:0  --load_to_mem -signal_length 4000  -batch_size 50
+python inference.py -input_path /SLIDER.SVS -model_path /MODEL_SAVEPATH -save_path ./RESULT
 ```
 
-### Adaptive sample
-You should start sequencing in Minknow.We recommend start nanodeep_adaptivesample when device into mux scan.
+## Please cite
 
-The parameter --filter_which depend on the label order of you model.For example,0 Represent the first label.
-```sh
-nanodeep_adaptivesample --filter_type deplete --filter_which 0  --model_name nanodeep --weight_path ./save/nanodeep.pth --first_channel 1 --last_channel 256 --compute_device cuda:0 
-```
-
-### Use your own model
-1.The generator in this package will return signal tensor[batch zise x channel x signal length]
-
-2.Make sure your model is suit with this signal tensor.
-
-3.Copy your model file into read_deep/model/ and rename what your model name
-
-4.Write a yaml file to record Super parameter
-
-5.Use it with parameter -model_name and -model_config
-
-For example
-```
-python ./nanodeep/nanodeep_trainmodel.py -data_path ./example/data/ -label_path ./example/label/ -signal_length 3000 -epochs 30 -batch_size 200 --save_best --load_to_mem -save_path ./example/squigglenet -model_name squigglenet -model_config ./read_deep/model_config/squigglenet.yaml
-```
+Lin Y., Lin F., Zhang Y. et al. PathoEye: a deep learning framework for histopathological image analysis of skin tissue. Submitted.
 
 ## Maintainer
 
-[@Yusen Lin](https://github.com/lysovosyl)
+Any questions, please contact [@Yusen Lin](https://github.com/lysovosyl)
 
+## Contributors
 
-### Contributors
-
-Thank you to the following people who participated in the project：
-Jiajian Zhou、Yongjun Zhang、Han Sun
+Thank you for the helps from Dr. Jiajian Zhou, Dr. Yongjun Zhang, Dr. Feiyan Lin and Miss Jiayu Wen.
 
 ## License
 
